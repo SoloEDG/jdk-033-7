@@ -4,6 +4,7 @@ import { useWind } from '../features/wind'
 import { useSail } from '../features/sail'
 import { useJury } from '../features/jury'
 import { useLogbook } from '../features/logbook'
+import { useRelay } from '../features/relay'
 import type { Point, RaceEvent, RaceStatus, Sample } from '../shared/race'
 
 const stepSize = .025
@@ -14,6 +15,7 @@ export function useRace() {
   const sail = useSail(course)
   const jury = useJury(course)
   const logbook = useLogbook()
+  const relay = useRelay(logbook.voyages)
   const status = ref<RaceStatus>('ready')
   const elapsed = ref(0)
   const focus = ref<Point | null>(null)
@@ -31,6 +33,7 @@ export function useRace() {
     focus.value = null
     logbook.selected.value = null
     logbook.samples.value = []
+    relay.disarm()
     sail.reset()
     jury.reset()
   }
@@ -39,6 +42,7 @@ export function useRace() {
     reset()
     wind.set(mode)
     status.value = 'running'
+    relay.resetForRace()
     jury.add('start', '出发', 0, sail.boat.value.position)
     logbook.record(live.value, true)
   }
@@ -54,6 +58,14 @@ export function useRace() {
     logbook.archive({
       courseId: course.id, windMode: wind.mode.value, status: result,
       duration: elapsed.value, penalty: jury.penalty.value, events: [...jury.events.value],
+      relay: relay.settlement.value
+        ? {
+            plannedOffset: relay.settlement.value.offset,
+            actualHandoffTime: relay.settlement.value.time,
+            knots: relay.settlement.value.knots,
+            sheet: relay.settlement.value.sheet,
+          }
+        : null,
     })
     status.value = result
   }
@@ -76,6 +88,16 @@ export function useRace() {
         boat: { ...next, position: event.position } }, true)
     }
     logbook.record(live.value, event?.time === elapsed.value)
+    const handoff = relay.tick(elapsed.value, sail.boat.value, stepSize)
+    if (handoff) {
+      sail.boat.value = handoff.boat
+      const recordTimeB = handoff.time - handoff.offset
+      const passedGates = relay.selectedB.value?.events.filter(event =>
+        (event.kind === 'mark' || event.kind === 'finish') && event.time <= recordTimeB + 1e-6).length ?? jury.nextGate.value
+      jury.synchronizeGate(passedGates)
+      jury.add('handoff', '接力交棒 · 按实际时刻结算', handoff.time, handoff.boat.position)
+      logbook.record(live.value, true)
+    }
     if (elapsed.value >= maxDuration) end('abandoned')
   }
   function loop(now: number) {
@@ -118,5 +140,5 @@ export function useRace() {
     window.removeEventListener('keyup', keyup)
     window.removeEventListener('blur', suspend)
   })
-  return { course, wind, sail, jury, logbook, status, focus, frame, trail, active, start, togglePause, end, locate }
+  return { course, wind, sail, jury, logbook, relay, status, focus, frame, trail, active, start, togglePause, end, locate }
 }

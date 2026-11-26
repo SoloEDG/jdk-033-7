@@ -96,6 +96,7 @@ input[type=range] { width: 100%; margin: 5px 0 10px; accent-color: #39696a; }
   .instruments { grid-row: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .marks { grid-column: 1 / -1; }
   .logbook { grid-row: 4; }
+  .relay-panel { grid-row: 5; }
 }
 @media (max-width: 400px) {
   .race-bar { padding-inline: 8px; gap: 11px; }

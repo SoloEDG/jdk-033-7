@@ -5,14 +5,26 @@ import { WindPanel } from '../features/wind'
 import { SailPanel } from '../features/sail'
 import { MarksPanel } from '../features/jury'
 import { LogbookPanel } from '../features/logbook'
+import { RelayPanel, makeDemoVoyages } from '../features/relay'
 import { clock } from '../shared/format'
 import { useRace } from './useRace'
 
-const { course, wind, sail, jury, logbook, status, focus, frame, trail, active, start, togglePause, end, locate } = useRace()
+const { course, wind, sail, jury, logbook, relay, status, focus, frame, trail, active, start, togglePause, end, locate } = useRace()
 const { voyages, selected, cursor, notice, seek, open } = logbook
 const { mode } = wind
 const { events } = jury
 const labels = { ready: '待出发', running: '竞速中', paused: '已暂停', finished: '已完赛', abandoned: '未完赛' }
+
+function loadDemoRelay() {
+  const [trackA, trackB] = makeDemoVoyages()
+  logbook.mergeVoyages([trackA, trackB])
+  relay.trackAId.value = trackA.id
+  relay.trackBId.value = trackB.id
+  relay.setOffset(1.45)
+  relay.chooseDefaults()
+  relay.trackAId.value = trackA.id
+  relay.trackBId.value = trackB.id
+}
 </script>
 
 <template>
@@ -34,9 +46,10 @@ const labels = { ready: '待出发', running: '竞速中', paused: '已暂停', 
             </template>
           </div>
         </div>
-        <CourseChart :course="course" :frame="frame" :trail="trail" :replay="Boolean(selected)" :focus="focus"/>
+        <CourseChart :course="course" :frame="frame" :trail="trail" :replay="Boolean(selected)" :focus="focus" :relay="relay"/>
         <LogbookPanel :voyages="voyages" :selected="selected" :events="selected?.events ?? events" :cursor="cursor" :notice="notice" :locked="active"
           @open="id => { focus = null; open(id) }" @close="selected = null; focus = null" @seek="time => { focus = null; seek(time) }" @focus="locate"/>
+        <RelayPanel :voyages="voyages" :controller="relay" :locked="active" :recorded-relay="selected?.relay" @load-demo="loadDemoRelay"/>
       </div>
       <aside class="instruments" aria-label="比赛仪表">
         <WindPanel :wind="frame.wind" :mode="selected?.windMode ?? mode" :locked="active || Boolean(selected)" @mode="wind.set"/>

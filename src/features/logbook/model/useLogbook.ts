@@ -20,6 +20,11 @@ export function useLogbook() {
     voyages.value = [voyage, ...voyages.value].slice(0, 12)
     notice.value = saveVoyages(voyages.value) ? '' : '存储已满或不可用，本航次仅保留在当前页面。'
   }
+  function mergeVoyages(incoming: Voyage[]) {
+    const incomingIds = new Set(incoming.map(voyage => voyage.id))
+    voyages.value = [...incoming, ...voyages.value.filter(voyage => !incomingIds.has(voyage.id))].slice(0, 12)
+    notice.value = saveVoyages(voyages.value) ? '已载入接力示例航迹' : '存储已满或不可用，示例仅保留在当前页面。'
+  }
   function open(id: string) {
     const voyage = voyages.value.find(item => item.id === id)
     if (voyage) { selected.value = voyage; cursor.value = voyage.duration }
@@ -28,5 +33,5 @@ export function useLogbook() {
     cursor.value = clamp(time, 0, selected.value?.duration ?? 0)
   }
   const frame = computed(() => selected.value ? sampleAt(selected.value.samples, cursor.value) : null)
-  return { voyages, samples, selected, cursor, frame, notice, record, archive, open, seek }
+  return { voyages, samples, selected, cursor, frame, notice, record, archive, mergeVoyages, open, seek }
 }

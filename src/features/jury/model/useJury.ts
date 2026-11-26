@@ -23,6 +23,12 @@ export function useJury(course: Course) {
     outside = false
     approached = false
   }
+  function synchronizeGate(next: number) {
+    nextGate.value = Math.max(0, Math.min(course.gates.length, Math.floor(next)))
+    approached = false
+    outside = false
+    contacts = new Set()
+  }
   function inspect(from: Point, to: Point, start: number, dt: number) {
     const gate = course.gates[nextGate.value]
     if (!gate) return { blocked: false, finish: null }
@@ -59,5 +65,5 @@ export function useJury(course: Course) {
     }
     return { blocked: false, finish: null }
   }
-  return { nextGate, penalty, events, reset, add, inspect }
+  return { nextGate, penalty, events, reset, synchronizeGate, add, inspect }
 }

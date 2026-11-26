@@ -24,7 +24,7 @@ export type WindMode = 'steady' | 'shifting'
 export interface Wind { bearing: number; knots: number }
 export interface Boat { position: Point; heading: number; knots: number; sheet: number; rudder: number }
 export type RaceStatus = 'ready' | 'running' | 'paused' | 'finished' | 'abandoned'
-export type EventKind = 'start' | 'mark' | 'collision' | 'deviation' | 'finish' | 'abandon'
+export type EventKind = 'start' | 'mark' | 'collision' | 'deviation' | 'finish' | 'abandon' | 'handoff'
 export interface RaceEvent {
   id: string
   time: number
@@ -50,4 +50,10 @@ export interface Voyage {
   penalty: number
   samples: Sample[]
   events: RaceEvent[]
+  relay?: {
+    plannedOffset: number
+    actualHandoffTime: number
+    knots: number
+    sheet: number
+  } | null
 }
